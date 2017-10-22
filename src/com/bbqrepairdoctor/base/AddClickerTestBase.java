@@ -87,9 +87,9 @@ public abstract class AddClickerTestBase {
         sleep(1);
 
         new TouchAction(driver).tap(991, 1688).perform();   //click on OK
-        sleep(7);
+        sleep(10);
         new TouchAction(driver).tap(921, 1695).perform();   //click on location.
-        sleep(6);
+        sleep(8);
 
         if (performUrlClick(driver, keyWord)) sleep(3);
     }
@@ -123,21 +123,25 @@ public abstract class AddClickerTestBase {
         return false;
     }
 
-    private boolean tryClickByAd(AndroidDriver driver, String keyWord) {
+    private boolean tryClickByAd(AndroidDriver driver, String keyWord) throws InterruptedException{
         if (performClick(driver, keyWord, findAdElements(driver))) return true;
         return false;
     }
 
-    protected boolean tryClickById(AndroidDriver driver, String keyWord, String... ids) {
+    protected boolean tryClickById(AndroidDriver driver, String keyWord, String... ids) throws InterruptedException{
         for (String clickID : ids)
             if (performClick(driver, keyWord, driver.findElementsById(clickID))) return true;
         return false;
     }
 
-    private boolean performClick(AndroidDriver driver, String keyWord, List<MobileElement> elements) {
+    private boolean performClick(AndroidDriver driver, String keyWord, List<MobileElement> elements)
+                    throws InterruptedException{
         for (MobileElement element:elements)
             if (clickAllowed(element)) {
-                (new TouchAction(driver)).press(885,1695).moveTo(element).release().perform();
+                if (!element.isDisplayed()) {
+                    (new TouchAction(driver)).press(885, 1695).moveTo(element).release().perform();
+                    sleep(1);
+                }
                 element.click();
                 addAnalytics(element.getAttribute(NAME_ATTR), keyWord);
                 return true;
@@ -158,7 +162,7 @@ public abstract class AddClickerTestBase {
         if (lastIndexAdd !=-1)
             clickDetails = clickDetails.substring(lastIndexAdd+3);
         clicks.add(new ClickInfo(keyWord, clickDetails));
-        if (clicks.size() == CRITICAL_ANALYTICS_MASS)
+        if (clicks.size() >= CRITICAL_ANALYTICS_MASS)
             try {
                 EmailSender.sendEmail(clicks, getTitle());
                 clicks.clear();
