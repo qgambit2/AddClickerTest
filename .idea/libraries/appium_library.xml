@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="appium-library">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/selenium-server-standalone-3.5.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/java-client-5.0.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/client-combined-3.5.3-nodeps.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
