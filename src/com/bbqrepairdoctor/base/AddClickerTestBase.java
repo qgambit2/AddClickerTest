@@ -28,6 +28,9 @@ public abstract class AddClickerTestBase {
 
     int CRITICAL_ANALYTICS_MASS = 300;
 
+    private static final String TOPHOME_HOSTNAME = "tophomeappliancerepair.com";
+    private static final String BBQREPAIR_HOSTNAME = "bbqrepairdoctor.com";
+
     @Before
     public void setUp() throws Exception{
         String line;
@@ -91,7 +94,8 @@ public abstract class AddClickerTestBase {
         new TouchAction(driver).tap(921, 1695).perform();   //click on location.
         sleep(8);
 
-        if (performUrlClick(driver, keyWord)) sleep(3);
+        if (performUrlClick(driver, keyWord) || performSiteClick(driver, keyWord))
+            sleep(3);
     }
 
     protected void sleep(int number) throws InterruptedException{
@@ -138,12 +142,7 @@ public abstract class AddClickerTestBase {
                     throws InterruptedException{
         for (MobileElement element:elements)
             if (clickAllowed(element)) {
-                if (!element.isDisplayed()) {
-                    (new TouchAction(driver)).press(885, 1695).moveTo(element).release().perform();
-                    sleep(1);
-                }
-                element.click();
-                addAnalytics(element.getAttribute(NAME_ATTR), keyWord);
+                performClickOnElement(driver, keyWord, element);
                 return true;
             }
         return false;
@@ -175,9 +174,8 @@ public abstract class AddClickerTestBase {
     }
 
     private List<MobileElement> findAdElements(AndroidDriver driver){
-        List<MobileElement> elements = driver.findElementsByXPath("//*");
         List<MobileElement> adElements = new ArrayList<>();
-        for (MobileElement element: elements)
+        for (MobileElement element:  (List<MobileElement>)driver.findElementsByXPath("//*"))
             if (element.getAttribute(NAME_ATTR).contains(ADD_PRESENT_KEYWORD))
                 adElements.add(element);
         return adElements;
@@ -185,6 +183,39 @@ public abstract class AddClickerTestBase {
 
     protected String getKeyword(){
         return keywordList.get(random.nextInt(keywordList.size()));
+    }
+
+    protected boolean performSiteClick(AndroidDriver driver, String keyWord) throws Exception{
+        List<MobileElement> elements = driver.findElementsByXPath("//*");
+        for (MobileElement element: elements){
+            String name = element.getAttribute(NAME_ATTR);
+            if (name.contains(TOPHOME_HOSTNAME) || name.contains(BBQREPAIR_HOSTNAME) && isClickable(element)){
+                performClickOnElement(driver, keyWord, element);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void performClickOnElement(AndroidDriver driver, String keyWord, MobileElement element) throws InterruptedException {
+        if (!element.isDisplayed()) {
+            new TouchAction(driver).press(885,1695).moveTo(element).release().perform();
+            sleep(1);
+        }
+        element.click();
+        addAnalytics(element.getAttribute(NAME_ATTR), keyWord);
+    }
+
+    private boolean isClickable(MobileElement element){
+        String id = element.getId();
+        List<String> ids = Arrays.asList(CLICK_IDS_1);
+        ids.addAll(Arrays.asList(CLICK_IDS_2));
+        for (String addId : ids){
+            if (id.equalsIgnoreCase(addId)){
+                return false;
+            }
+        }
+        return true;
     }
 
     protected abstract String getDeviceName();
