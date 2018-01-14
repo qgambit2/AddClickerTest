@@ -51,6 +51,7 @@ public abstract class AddClickerTestBase {
             }
         }
         addAdditionalExceptionUrls();
+        resetAppium();
     }
     private void addAdditionalExceptionUrls() {
         exceptionUrls.add("tophomeappliancerepair.com");
@@ -59,9 +60,15 @@ public abstract class AddClickerTestBase {
 
     @Test
     public void test(){
+        long time = System.currentTimeMillis();
         while (true) {
             AndroidDriver driver = null;
             try {
+                long now = System.currentTimeMillis();
+                if (now - time > 3600000){
+                    resetAppium();
+                    time = System.currentTimeMillis();
+                }
                 driver = createDriver();
                 performBusinessLogic(driver);
                 driver.quit();
@@ -189,7 +196,7 @@ public abstract class AddClickerTestBase {
         List<MobileElement> elements = driver.findElementsByXPath("//*");
         for (MobileElement element: elements){
             String name = element.getAttribute(NAME_ATTR);
-            if (name.contains(TOPHOME_HOSTNAME) || name.contains(BBQREPAIR_HOSTNAME) && isClickable(element)){
+            if (name.contains(TOPHOME_HOSTNAME) || name.contains(BBQREPAIR_HOSTNAME) && !isAnAd(element)){
                 performClickOnElement(driver, keyWord, element);
                 return true;
             }
@@ -206,16 +213,50 @@ public abstract class AddClickerTestBase {
         addAnalytics(element.getAttribute(NAME_ATTR), keyWord);
     }
 
-    private boolean isClickable(MobileElement element){
+    private boolean isAnAd(MobileElement element){
         String id = element.getId();
-        List<String> ids = Arrays.asList(CLICK_IDS_1);
+        List<String> ids = new ArrayList<>();
+        ids.addAll(Arrays.asList(CLICK_IDS_1));
         ids.addAll(Arrays.asList(CLICK_IDS_2));
         for (String addId : ids){
             if (id.equalsIgnoreCase(addId)){
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
+    }
+
+    private void resetAppium(){
+        try{
+            String line;
+            List<String> pids = new ArrayList<>();
+            Process p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
+                    "ps -ef | grep appium | awk '{print $2}'"});
+            BufferedReader input =
+                    new BufferedReader
+                            (new InputStreamReader(p.getInputStream()));
+            while ((line = input.readLine()) != null) {
+                pids.add(line);
+            }
+            input.close();
+
+            for (int i=0;i<pids.size();i++){
+                p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
+                        "kill -9 "+pids.get(i)});
+                input = new BufferedReader
+                                (new InputStreamReader(p.getInputStream()));
+                while ((line = input.readLine()) != null) {
+                    pids.add(line);
+                }
+                input.close();
+            }
+
+            Runtime.getRuntime().exec("appium");
+            Thread.sleep(10000l);
+        }
+        catch (Throwable t){
+            t.printStackTrace();
+        }
     }
 
     protected abstract String getDeviceName();
