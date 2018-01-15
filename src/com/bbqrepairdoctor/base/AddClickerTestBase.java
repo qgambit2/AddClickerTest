@@ -82,6 +82,7 @@ public abstract class AddClickerTestBase {
         }
     }
 
+    java.util.Random random = new SecureRandom();
     protected void performBusinessLogic(AndroidDriver driver) throws Exception{
         changeIPAddress(driver);
         WebElement el1 = driver.findElementByAccessibilityId("More options");
@@ -92,6 +93,24 @@ public abstract class AddClickerTestBase {
         catch(Exception e){}
 
         driver.findElementByAccessibilityId("New incognito tab").click();
+
+        int rand = random.nextInt(2);
+        if (rand == 0){
+            sleep(1);
+            el1 = driver.findElementByAccessibilityId("More options");
+            el1.click();
+            try {
+                el1.click();
+            }
+            catch(Exception e){}
+
+            sleep(1);
+
+            MobileElement el8 = (MobileElement) driver.findElementById("com.android.chrome:id/checkbox");
+            el8.click();
+            sleep(1);
+        }
+
         String keyWord = getKeyword();
         driver.findElementById("com.android.chrome:id/url_bar").sendKeys(keyWord);
         sleep(1);
