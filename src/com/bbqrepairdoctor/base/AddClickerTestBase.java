@@ -18,8 +18,10 @@ public abstract class AddClickerTestBase {
     private static final String PLATFORM_VERSION = "6.0.1";
     private static final String serverUrl = "http://127.0.0.1:4723/wd/hub";
     protected static final Random random = new SecureRandom();
-    protected static final String[] CLICK_IDS_1 = {"vs0p1c0","vs0p2c0","vs0p3c0","vs0p4c0","vs0p5c0","vs0p6c0"};
-    protected static final String[] CLICK_IDS_2 = {"vs3p1c0","vs3p2c0","vs3p3c0"};
+
+    protected static final String[] CLICK_IDS_X1 = {"0p1c0", "0p2c0", "0p3c0", "0p4c0"};
+    protected static final String[] CLICK_IDS_X2 = {"3p1c0", "3p2c0", "3p3c0", "3p4c0"};
+
     private static final String ADD_PRESENT_KEYWORD = " Ad";
     private static final String NAME_ATTR = "name";
 
@@ -82,7 +84,6 @@ public abstract class AddClickerTestBase {
         }
     }
 
-    java.util.Random random = new SecureRandom();
     protected void performBusinessLogic(AndroidDriver driver) throws Exception{
         changeIPAddress(driver);
         WebElement el1 = driver.findElementByAccessibilityId("More options");
@@ -146,9 +147,9 @@ public abstract class AddClickerTestBase {
     }
 
     protected boolean performUrlClick(AndroidDriver driver, String keyWord) throws Exception{
-        if (tryClickById(driver, keyWord, CLICK_IDS_1)) return true;
+        if (tryClickById(driver, keyWord, CLICK_IDS_X1)) return true;
         if (tryClickByAd(driver, keyWord)) return true;
-        if (tryClickById(driver, keyWord, CLICK_IDS_2)) return true;
+        if (tryClickById(driver, keyWord, CLICK_IDS_X2)) return true;
 
         return false;
     }
@@ -159,8 +160,12 @@ public abstract class AddClickerTestBase {
     }
 
     protected boolean tryClickById(AndroidDriver driver, String keyWord, String... ids) throws InterruptedException{
-        for (String clickID : ids)
-            if (performClick(driver, keyWord, driver.findElementsById(clickID))) return true;
+        for (String id : ids) {
+            List<MobileElement> elements =
+                    driver.findElementsByXPath(
+                            "//*[substring(@resource-id,string-length(@resource-id)-string-length('"+id+"') +1) = '"+id+"']");
+            if (performClick(driver, keyWord,elements)) return true;
+        }
         return false;
     }
 
@@ -235,10 +240,10 @@ public abstract class AddClickerTestBase {
     private boolean isAnAd(MobileElement element){
         String id = element.getId();
         List<String> ids = new ArrayList<>();
-        ids.addAll(Arrays.asList(CLICK_IDS_1));
-        ids.addAll(Arrays.asList(CLICK_IDS_2));
+        ids.addAll(Arrays.asList(CLICK_IDS_X1));
+        ids.addAll(Arrays.asList(CLICK_IDS_X2));
         for (String addId : ids){
-            if (id.equalsIgnoreCase(addId)){
+            if (id.endsWith(addId)){
                 return true;
             }
         }

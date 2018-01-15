@@ -73,8 +73,8 @@ public class SiteTestApplianceRepair extends AddClickerTestBase {
 
     private boolean isClickable(MobileElement element){
         String id = element.getId();
-        for (String addId : CLICK_IDS_1){
-            if (id.equalsIgnoreCase(addId)){
+        for (String addId : CLICK_IDS_X1){
+            if (id.endsWith(addId)){
                 return false;
             }
         }
