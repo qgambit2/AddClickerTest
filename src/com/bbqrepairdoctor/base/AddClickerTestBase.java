@@ -10,6 +10,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.*;
@@ -35,29 +36,12 @@ public abstract class AddClickerTestBase {
 
     @Before
     public void setUp() throws Exception{
-        String line;
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(new URL(getKeywordsUrl()).openStream()))) {
-            while ((line = reader.readLine()) != null) {
-                String[] keywordAndFrequency = line.split(",");
-                if (keywordAndFrequency.length > 0 && (line = keywordAndFrequency[0].trim()).length()>0) {
-                    int frequency = (keywordAndFrequency.length > 1)?Integer.parseInt(keywordAndFrequency[1].trim()):1;
-                    for (int i = 0; i < frequency; i++)
-                        keywordList.add(line);
-                }
-            }
-        }
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(new URL(getExceptionsUrl()).openStream()))) {
-            while ((line = reader.readLine()) != null) {
-                if (!(line = line.trim()).equals(""))
-                    exceptionUrls.add(line);
-            }
-        }
-        addAdditionalExceptionUrls();
+        refreshKeywordsAndUrls();
         resetAppium();
     }
-    private void addAdditionalExceptionUrls() {
-        exceptionUrls.add("tophomeappliancerepair.com");
-        exceptionUrls.add("bbqrepairdoctor.com");
+    private void addAdditionalExceptionUrls(Collection urls) {
+        urls.add("tophomeappliancerepair.com");
+        urls.add("bbqrepairdoctor.com");
     }
 
     @Test
@@ -69,6 +53,9 @@ public abstract class AddClickerTestBase {
                 long now = System.currentTimeMillis();
                 if (now - time > 3600000  && !"false".equals(System.getenv("reset.appium"))){
                     resetAppium();
+                    try{
+                        refreshKeywordsAndUrls();
+                    }catch (Exception e){};
                     time = System.currentTimeMillis();
                 }
                 driver = createDriver();
@@ -80,6 +67,9 @@ public abstract class AddClickerTestBase {
                 try {
                     driver.quit();
                 } catch (Throwable e) {}
+                if (t.getCause()!=null && t.getCause() instanceof ConnectException){
+                    resetAppium();
+                }
             }
         }
     }
@@ -217,7 +207,7 @@ public abstract class AddClickerTestBase {
             }
             catch(Exception e){
                 e.printStackTrace();
-                if (clicks.size()>CRITICAL_ANALYTICS_MASS*3)
+                if (clicks.size()>CRITICAL_ANALYTICS_MASS*30)
                     clicks.clear();
             }
     }
@@ -270,34 +260,115 @@ public abstract class AddClickerTestBase {
 
     private void resetAppium(){
         try{
-            String line;
-            List<String> pids = new ArrayList<>();
-            Process p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
-                    "ps -ef | grep appium | awk '{print $2}'"});
-            BufferedReader input =
-                    new BufferedReader
+            String os = System.getProperty("os.name");
+            if (os!=null && os.toLowerCase().contains("windows")){
+                stopAppiumWindows();
+                startAppiumWindows();
+            }
+            else {
+                stopAppiumLinux();
+                startAppiumLinux();
+            }
+
+        }
+        catch (Throwable t){
+            t.printStackTrace();
+        }
+    }
+
+    void startAppiumWindows() throws Exception{
+        Process p = Runtime.getRuntime().exec(new String[]{
+                "where", "appium"
+        });
+
+        List<String> locations = new ArrayList<>();
+
+        String line = null;
+        BufferedReader input = new BufferedReader
+                (new InputStreamReader(p.getInputStream()));
+        while ((line = input.readLine()) != null) {
+            locations.add(line);
+        }
+        input.close();
+
+        Exception ex = new RuntimeException("Appium not found");
+        boolean success = false;
+        for (String location:locations){
+            try{
+                p = Runtime.getRuntime().exec(new String[]{
+                        location
+                });
+                success = true;
+                final BufferedReader input2 = new BufferedReader
+                                (new InputStreamReader(p.getInputStream()));
+                Thread t = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String line = null;
+                        try {
+                            while ((line = input2.readLine()) != null) {
+                                System.out.println(line);
+                            }
+                        }
+                        catch (Exception e){}
+
+                    }
+                });
+                t.start();
+                break;
+            }
+            catch (Exception e){
+                ex = e;
+            }
+        }
+        if (!success){
+            throw ex;
+        }
+        Thread.sleep(30000l);
+    }
+
+    void startAppiumLinux() throws Exception{
+        Runtime.getRuntime().exec("appium");
+        Thread.sleep(10000l);
+    }
+
+    private void stopAppiumWindows() throws IOException{
+        Process p = Runtime.getRuntime().exec(new String[]{
+               "taskkill", "/IM", "node.exe", "/F"
+        });
+
+        String line = null;
+        BufferedReader input = new BufferedReader
+                (new InputStreamReader(p.getInputStream()));
+        while ((line = input.readLine()) != null) {
+           //
+        }
+        input.close();
+
+    }
+
+    private void stopAppiumLinux() throws IOException {
+        String line;
+        List<String> pids = new ArrayList<>();
+        Process p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
+                "ps -ef | grep appium | awk '{print $2}'"});
+        BufferedReader input =
+                new BufferedReader
+                        (new InputStreamReader(p.getInputStream()));
+        while ((line = input.readLine()) != null) {
+            pids.add(line);
+        }
+        input.close();
+
+        for (int i=0;i<pids.size();i++){
+            p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
+                    "kill -9 "+pids.get(i)});
+            input = new BufferedReader
                             (new InputStreamReader(p.getInputStream()));
             while ((line = input.readLine()) != null) {
                 pids.add(line);
             }
             input.close();
-
-            for (int i=0;i<pids.size();i++){
-                p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
-                        "kill -9 "+pids.get(i)});
-                input = new BufferedReader
-                                (new InputStreamReader(p.getInputStream()));
-                while ((line = input.readLine()) != null) {
-                    pids.add(line);
-                }
-                input.close();
-            }
-
-            Runtime.getRuntime().exec("appium");
-            Thread.sleep(10000l);
-        }
-        catch (Throwable t){
-            t.printStackTrace();
         }
     }
 
@@ -305,4 +376,31 @@ public abstract class AddClickerTestBase {
     protected abstract String getKeywordsUrl();
     protected abstract String getExceptionsUrl();
     protected abstract String getTitle();
+
+
+    public void refreshKeywordsAndUrls() throws Exception{
+        String line;
+        List<String> localKeywordList = new ArrayList<>();
+        Set<String> localExceptionUrls = new HashSet<>();
+
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(new URL(getKeywordsUrl()).openStream()))) {
+            while ((line = reader.readLine()) != null) {
+                String[] keywordAndFrequency = line.split(",");
+                if (keywordAndFrequency.length > 0 && (line = keywordAndFrequency[0].trim()).length()>0) {
+                    int frequency = (keywordAndFrequency.length > 1)?Integer.parseInt(keywordAndFrequency[1].trim()):1;
+                    for (int i = 0; i < frequency; i++)
+                        localKeywordList.add(line);
+                }
+            }
+        }
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(new URL(getExceptionsUrl()).openStream()))) {
+            while ((line = reader.readLine()) != null) {
+                if (!(line = line.trim()).equals(""))
+                    localExceptionUrls.add(line);
+            }
+        }
+        addAdditionalExceptionUrls(localExceptionUrls);
+        this.keywordList = localKeywordList;
+        this.exceptionUrls = localExceptionUrls;
+    }
 }
