@@ -67,7 +67,7 @@ public abstract class AddClickerTestBase {
             AndroidDriver driver = null;
             try {
                 long now = System.currentTimeMillis();
-                if (now - time > 3600000){
+                if (now - time > 3600000  && !"false".equals(System.getenv("reset.appium"))){
                     resetAppium();
                     time = System.currentTimeMillis();
                 }
@@ -130,11 +130,29 @@ public abstract class AddClickerTestBase {
     }
 
     private AndroidDriver createDriver() throws Exception{
+        String systemPlatformVersion = System.getenv("PLATFORM_VERSION");
+        String systemUDID = System.getenv("UDID");
+        String systemDeviceName = System.getenv("DEVICE_NAME");
+
         DesiredCapabilities capabilities = DesiredCapabilities.android();
-        capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, getDeviceName());
+        if (systemDeviceName!=null) {
+            capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, systemDeviceName);
+        }
+        else{
+            capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, getDeviceName());
+        }
         capabilities.setCapability(MobileCapabilityType.BROWSER_NAME, MobileBrowserType.CHROME);
         capabilities.setCapability(MobileCapabilityType.PLATFORM_NAME, Platform.ANDROID);
-        capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, PLATFORM_VERSION);
+        if (systemPlatformVersion!=null){
+            capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, systemPlatformVersion);
+        }
+        else {
+            capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, PLATFORM_VERSION);
+        }
+        if (systemUDID!=null){
+            capabilities.setCapability(MobileCapabilityType.UDID, systemUDID);
+        }
+
         capabilities.setCapability(MobileCapabilityType.ORIENTATION, ScreenOrientation.PORTRAIT);
         AndroidDriver driver = new AndroidDriver(new URL(serverUrl), capabilities);
         driver.context("NATIVE_APP");
