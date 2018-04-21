@@ -17,7 +17,7 @@ import java.util.*;
 
 public abstract class AddClickerTestBase {
     private static final String PLATFORM_VERSION = "6.0.1";
-    private static final String serverUrl = "http://127.0.0.1:4723/wd/hub";
+
     protected static final Random random = new SecureRandom();
 
     protected static final String[] CLICK_IDS_X1 = {"0p1c0", "0p2c0", "0p3c0", "0p4c0"};
@@ -143,6 +143,12 @@ public abstract class AddClickerTestBase {
             capabilities.setCapability(MobileCapabilityType.UDID, systemUDID);
         }
 
+        String appiumPort = System.getenv("appium.port");
+        if (appiumPort == null){
+            appiumPort = "4723";
+        }
+        String serverUrl = "http://127.0.0.1:"+appiumPort+"/wd/hub";
+
         capabilities.setCapability(MobileCapabilityType.ORIENTATION, ScreenOrientation.PORTRAIT);
         AndroidDriver driver = new AndroidDriver(new URL(serverUrl), capabilities);
         driver.context("NATIVE_APP");
@@ -259,7 +265,7 @@ public abstract class AddClickerTestBase {
     }
 
     private void resetAppium(){
-        if("false".equals(System.getenv("reset.appium")  ){
+        if("false".equals(System.getenv("reset.appium"))){
             return;
         }
         try{
@@ -331,7 +337,11 @@ public abstract class AddClickerTestBase {
     }
 
     void startAppiumLinux() throws Exception{
-        Runtime.getRuntime().exec("appium");
+        String appiumPort = System.getenv("appium.port");
+        if (appiumPort == null){
+            appiumPort = "4723";
+        }
+        Runtime.getRuntime().exec("appium -p "+appiumPort);
         Thread.sleep(10000l);
     }
 
@@ -353,8 +363,13 @@ public abstract class AddClickerTestBase {
     private void stopAppiumLinux() throws IOException {
         String line;
         List<String> pids = new ArrayList<>();
+
+        String appiumPort = System.getenv("appium.port");
+        if (appiumPort == null){
+            appiumPort = "4723";
+        }
         Process p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
-                "ps -ef | grep appium | awk '{print $2}'"});
+                "ps -ef | grep 'appium -p "+appiumPort+"' | awk '{print $2}'"});
         BufferedReader input =
                 new BufferedReader
                         (new InputStreamReader(p.getInputStream()));
