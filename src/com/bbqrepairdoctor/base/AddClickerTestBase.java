@@ -51,7 +51,7 @@ public abstract class AddClickerTestBase {
             AndroidDriver driver = null;
             try {
                 long now = System.currentTimeMillis();
-                if (now - time > 3600000  && !"false".equals(System.getenv("reset.appium"))){
+                if (now - time > 3600000 ){
                     resetAppium();
                     try{
                         refreshKeywordsAndUrls();
@@ -259,6 +259,9 @@ public abstract class AddClickerTestBase {
     }
 
     private void resetAppium(){
+        if("false".equals(System.getenv("reset.appium")  ){
+            return;
+        }
         try{
             String os = System.getProperty("os.name");
             if (os!=null && os.toLowerCase().contains("windows")){
