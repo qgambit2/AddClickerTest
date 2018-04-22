@@ -108,7 +108,7 @@ public abstract class AddClickerTestBase {
 
         new TouchAction(driver).tap(991, 1688).perform();   //click on OK
         sleep(10);
-        (new TouchAction(driver)).tap(708, 1034).perform();
+        (new TouchAction(driver)).tap(902, 1040).perform();
 
         sleep(8);
 
