@@ -342,7 +342,8 @@ public abstract class AddClickerTestBase {
             appiumPort = "4723";
         }
         String bPort = String.valueOf(Integer.parseInt(appiumPort)+1);
-        Runtime.getRuntime().exec("appium -p "+appiumPort+" -bp "+bPort);
+        String cPort = String.valueOf(Integer.parseInt(appiumPort)+2);
+        Runtime.getRuntime().exec("appium -p "+appiumPort+" -bp "+bPort+" --chromedriver-port "+cPort);
         Thread.sleep(10000l);
     }
 
