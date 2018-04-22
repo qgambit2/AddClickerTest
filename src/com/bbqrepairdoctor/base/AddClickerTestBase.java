@@ -85,7 +85,7 @@ public abstract class AddClickerTestBase {
 
         driver.findElementByAccessibilityId("New incognito tab").click();
 
-        int rand = random.nextInt(2);
+        int rand = random.nextInt(3);
         if (rand == 0){
             sleep(1);
             el1 = driver.findElementByAccessibilityId("More options");
@@ -108,11 +108,12 @@ public abstract class AddClickerTestBase {
 
         new TouchAction(driver).tap(991, 1688).perform();   //click on OK
         sleep(10);
-        new TouchAction(driver).tap(921, 1695).perform();   //click on location.
+        (new TouchAction(driver)).tap(708, 1034).perform();
+
         sleep(8);
 
         if (performUrlClick(driver, keyWord) || performSiteClick(driver, keyWord))
-            sleep(3);
+            sleep(6);
     }
 
     protected void sleep(int number) throws InterruptedException{
@@ -343,7 +344,7 @@ public abstract class AddClickerTestBase {
         }
         String bPort = String.valueOf(Integer.parseInt(appiumPort)+1);
         String cPort = String.valueOf(Integer.parseInt(appiumPort)+2);
-        Runtime.getRuntime().exec("appium -p "+appiumPort+" -bp "+bPort+" --chromedriver-port "+cPort);
+        Runtime.getRuntime().exec("appium -p "+appiumPort+" -bp "+bPort);//+" --chromedriver-port "+cPort);
         Thread.sleep(10000l);
     }
 
