@@ -341,7 +341,8 @@ public abstract class AddClickerTestBase {
         if (appiumPort == null){
             appiumPort = "4723";
         }
-        Runtime.getRuntime().exec("appium -p "+appiumPort);
+        String bPort = String.valueOf(Integer.parseInt(appiumPort)+1);
+        Runtime.getRuntime().exec("appium -p "+appiumPort+" -bp "+bPort);
         Thread.sleep(10000l);
     }
 
@@ -370,19 +371,15 @@ public abstract class AddClickerTestBase {
         }
         Process p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
                 "ps -ef | grep 'appium -p "+appiumPort+"' | awk '{print $2}'"});
-        BufferedReader input =
-                new BufferedReader
-                        (new InputStreamReader(p.getInputStream()));
+        BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
         while ((line = input.readLine()) != null) {
             pids.add(line);
         }
         input.close();
 
         for (int i=0;i<pids.size();i++){
-            p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
-                    "kill -9 "+pids.get(i)});
-            input = new BufferedReader
-                            (new InputStreamReader(p.getInputStream()));
+            p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "kill -9 "+pids.get(i)});
+            input = new BufferedReader(new InputStreamReader(p.getInputStream()));
             while ((line = input.readLine()) != null) {
                 pids.add(line);
             }
