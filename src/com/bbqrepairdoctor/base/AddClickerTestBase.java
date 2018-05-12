@@ -162,9 +162,11 @@ public abstract class AddClickerTestBase {
         return driver;
     }
 
-    protected void changeIPAddress(AndroidDriver driver) {
-        driver.setConnection(Connection.AIRPLANE);
+    protected void changeIPAddress(AndroidDriver driver) throws InterruptedException{
+        driver.setConnection(Connection.WIFI);
+        sleep(1);
         driver.setConnection(Connection.DATA);
+        sleep(1);
     }
 
     protected boolean performUrlClick(AndroidDriver driver, String keyWord) throws Exception{
