@@ -52,11 +52,19 @@ public abstract class AddClickerTestBase {
 
     @Test
     public void test(){
+        long adbTime = System.currentTimeMillis();
         long time = System.currentTimeMillis();
         while (true) {
             AndroidDriver driver = null;
             try {
                 long now = System.currentTimeMillis();
+                if (now - adbTime > 3600000*8 ){
+                    if ("true".equals(System.getenv("RESET.ADB"))){
+                        resetAdb();
+                        adbTime = now;
+                    }
+                }
+
                 if (now - time > 3600000 ){
                     resetAppium();
                     try{
@@ -431,6 +439,23 @@ public abstract class AddClickerTestBase {
             }
             input.close();
         }
+    }
+
+    private void resetAdb() throws IOException{
+        Process p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
+                "adb kill-server"});
+        String line;
+        BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        while ((input.readLine()) != null) {
+        }
+        input.close();
+
+        p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c",
+                "adb start-server"});
+        input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        while ((input.readLine()) != null) {
+        }
+        input.close();
     }
 
     protected abstract String getDeviceName();
