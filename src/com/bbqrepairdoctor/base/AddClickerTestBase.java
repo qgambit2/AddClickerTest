@@ -5,8 +5,14 @@ import com.bbqrepairdoctor.model.ClickInfo;
 import io.appium.java_client.*;
 import io.appium.java_client.android.*;
 import io.appium.java_client.remote.*;
+import io.appium.java_client.service.local.AppiumDriverLocalService;
+import io.appium.java_client.service.local.AppiumServiceBuilder;
+import io.appium.java_client.service.local.flags.AndroidServerFlag;
+import io.appium.java_client.service.local.flags.GeneralServerFlag;
+import io.appium.java_client.service.local.flags.ServerArgument;
 import org.junit.*;
 import org.openqa.selenium.*;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.io.*;
@@ -271,6 +277,9 @@ public abstract class AddClickerTestBase {
         }
         try{
             String os = System.getProperty("os.name");
+            try{
+                if (service !=null) service.stop();
+            }catch (Exception e){}
             if (os!=null && os.toLowerCase().contains("windows")){
                 stopAppiumWindows();
                 startAppiumWindows();
@@ -339,14 +348,47 @@ public abstract class AddClickerTestBase {
 
     void startAppiumLinux() throws Exception{
         String appiumPort = System.getenv("appium.port");
+        String udid = System.getenv("UDID");
+        String tmpDir = System.getenv("TMP_DIR");
         if (appiumPort == null){
             appiumPort = "4723";
         }
-        String bPort = String.valueOf(Integer.parseInt(appiumPort)+1);
-        String cPort = String.valueOf(Integer.parseInt(appiumPort)+2);
-        Runtime.getRuntime().exec("appium -p "+appiumPort+" -bp "+bPort);//+" --chromedriver-port "+cPort);
+        String bPort = String.valueOf(Integer.parseInt(appiumPort)+2);
+        String cPort = String.valueOf(Integer.parseInt(appiumPort)+4);
+        String selendroidPort = String.valueOf(Integer.parseInt(appiumPort)+6);
+        String systemPort = String.valueOf(Integer.parseInt(appiumPort)+8);
+
+        String command = "appium -p "+appiumPort+" -bp "+bPort+" -U "+udid+" --chromedriver-port "+cPort
+                +" --session-override --tmp "+tmpDir +" --selendroid-port " + selendroidPort;
+
+        AppiumServiceBuilder builder = new AppiumServiceBuilder();
+        builder.withIPAddress("127.0.0.1");
+        builder.withLogFile(new File(tmpDir+"/"+appiumPort+".log"));
+        builder.usingPort(Integer.parseInt(appiumPort));
+        builder.withArgument(GeneralServerFlag.TEMP_DIRECTORY, tmpDir);
+        builder.withArgument(GeneralServerFlag.SESSION_OVERRIDE);
+        builder.withArgument(AndroidServerFlag.BOOTSTRAP_PORT_NUMBER, bPort);
+        builder.withArgument(AndroidServerFlag.CHROME_DRIVER_PORT, cPort);
+        builder.withArgument(AndroidServerFlag.SUPPRESS_ADB_KILL_SERVER);//, "true");
+
+        DesiredCapabilities caps = DesiredCapabilities.android();
+        caps.setCapability("noReset", "false");
+        caps.setCapability(MobileCapabilityType.UDID, udid);
+        caps.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
+        caps.setCapability(MobileCapabilityType.AUTOMATION_NAME, "Appium");
+        caps.setCapability(MobileCapabilityType.BROWSER_NAME, "chrome");
+        caps.setCapability(MobileCapabilityType.PLATFORM_VERSION, System.getenv("PLATFORM_VERSION"));
+        caps.setCapability("version", System.getenv("PLATFORM_VERSION"));
+        caps.setCapability("platform", System.getenv("ANDROID"));
+        caps.setCapability("systemPort", systemPort);
+
+        builder.withCapabilities(caps);
+        service = AppiumDriverLocalService.buildService(builder);
+        service.start();
+        //Runtime.getRuntime().exec(command);
         Thread.sleep(10000l);
     }
+    AppiumDriverLocalService service = null;
 
     private void stopAppiumWindows() throws IOException{
         Process p = Runtime.getRuntime().exec(new String[]{
